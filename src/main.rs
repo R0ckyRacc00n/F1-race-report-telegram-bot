@@ -4,9 +4,7 @@ mod request_to_website;
 mod race;
 
 use std::{
-    fs::{self, File, OpenOptions},
-    io::{self, BufRead, BufReader, Write},
-    path::Path,
+    fs,
     time::Duration,
 };
 use std::time::SystemTime;
@@ -72,7 +70,10 @@ async fn tg_bot() {
 
     teloxide::repl(bot, |bot: Bot, msg: Message| async move {
         update_file_info().await;
-        let season_races = read_races_from_json("race_data.json").unwrap();
+        let season_races = read_races_from_json("race_data.json").unwrap_or_else(|err| {
+            log::error!("Failed to read race data: {}", err);
+            Vec::new()
+        });
 
         for race in season_races {
             if race.date < Local::now().naive_local().date() {
@@ -80,7 +81,11 @@ async fn tg_bot() {
             }
             {
                 loop {
-                    let drivers_list = get_results(&race.url).await;
+                    let drivers_list = get_results(&race.url).await.unwrap_or_else(|err| {
+                        log::error!("Failed to get results: {}", err);
+                        Vec::new()
+                    });
+
                     if drivers_list.is_empty() {
                         log::info!("Race don't have results yet");
                     }

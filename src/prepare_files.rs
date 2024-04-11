@@ -1,7 +1,7 @@
 use scraper::{Html, Selector};
+use reqwest::Error;
 
-
-pub async fn f1_official_results_links() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+pub async fn f1_official_results_links() -> Result<Vec<String>, Error> {
     let main_url = "https://www.formula1.com/en/results.html";
 
     let mut vec_of_urls = Vec::new();
@@ -10,13 +10,13 @@ pub async fn f1_official_results_links() -> Result<Vec<String>, Box<dyn std::err
     let body = resp.text().await?;
 
     let html = Html::parse_document(&body);
-    let selector = Selector::parse("a").unwrap();
+    let selector = Selector::parse("a").expect("Failed to parse selector");
 
     for element in html.select(&selector) {
         if let Some(link_part) = element.value().attr("href") {
             if link_part.contains("/en/results.html/") && link_part.contains("/races/") {
                 let link = format!("https://www.formula1.com{link_part}");
-                if !vec_of_urls.contains(&link){
+                if !vec_of_urls.contains(&link) {
                     vec_of_urls.push(link);
                 }
             }
