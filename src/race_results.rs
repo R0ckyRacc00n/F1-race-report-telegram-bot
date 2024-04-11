@@ -2,12 +2,14 @@ use scraper::{Html, Selector};
 use crate::driver::{Driver, parse_driver_from_row};
 use reqwest::Error;
 
+
 async fn get_html(url: &str) -> Result<Html, Error> {
     let resp = reqwest::get(url).await?;
     let body = resp.text().await?;
     Ok(Html::parse_document(&body))
 }
 
+// Fetches data about every driver in the race
 pub async fn get_results(url: &str) -> Result<Vec<Driver>, Error> {
     let document = get_html(url).await?;
 
@@ -36,7 +38,7 @@ pub async fn get_results(url: &str) -> Result<Vec<Driver>, Error> {
 
 #[cfg(test)]
 mod tests {
-    use crate::request_to_website::get_results;
+    use crate::race_results::get_results;
 
     #[tokio::test]
     async fn test_get_results() {

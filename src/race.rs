@@ -6,6 +6,7 @@ use serde_json::{from_reader, to_writer_pretty};
 use teloxide::utils::markdown::escape;
 
 
+// Define the Race struct representing a Formula 1 race
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Race {
     pub name: String,
@@ -25,6 +26,7 @@ impl Race {
 
 }
 
+// Function to fetch race data from the web
 pub async fn get_race_data(url: String) -> Race {
     let resp = reqwest::get(&url).await.unwrap();
     let body = resp.text().await.unwrap();

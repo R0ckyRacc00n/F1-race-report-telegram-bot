@@ -1,6 +1,8 @@
 use scraper::{Html, Selector};
 use reqwest::Error;
 
+
+// Function to fetch official Formula 1 race result links
 pub async fn f1_official_results_links() -> Result<Vec<String>, Error> {
     let main_url = "https://www.formula1.com/en/results.html";
 

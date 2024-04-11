@@ -2,6 +2,8 @@ use std::fmt::{Display, Formatter};
 use scraper::{ElementRef, Selector};
 use teloxide::utils::markdown::escape;
 
+
+// Define the Driver struct representing a Formula 1 driver
 pub struct Driver {
     pub position: String,
     pub number: String,
@@ -66,6 +68,7 @@ impl Display for Driver {
     }
 }
 
+// Function to extract text from nth child of an HTML element
 fn get_text_from_nth_child(row: &ElementRef, nth_child: usize) -> Result<String, &'static str> {
     let selector = Selector::parse(&format!("td:nth-child({nth_child})"))
         .map_err(|_| "Failed to parse selector")?;
@@ -78,6 +81,7 @@ fn get_text_from_nth_child(row: &ElementRef, nth_child: usize) -> Result<String,
     Ok(text)
 }
 
+// Function to parse driver data from an HTML row
 pub fn parse_driver_from_row(row: &ElementRef) -> Result<Driver, &'static str> {
     let position = get_text_from_nth_child(row, 2)?;
     let number = get_text_from_nth_child(row, 3)?;
