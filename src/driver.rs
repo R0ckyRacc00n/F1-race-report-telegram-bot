@@ -1,27 +1,28 @@
 use std::fmt::{Display, Formatter};
 use scraper::Selector;
+use teloxide::utils::markdown::escape;
 
 pub struct Driver {
     position: String,
-    number: u8,
+    number: String,
     first_name: String,
     second_name: String,
     short_name: String,
     team: String,
-    laps: u8,
+    laps: String,
     time: String,
-    points: u8,
+    points: String,
 }
 impl Driver {
     fn new(position: String,
-           number: u8,
+           number: String,
            first_name: String,
            second_name: String,
            short_name: String,
            team: String,
-           laps: u8,
+           laps: String,
            time: String,
-           points: u8) -> Self {
+           points: String) -> Self {
 
         Driver {
             position,
@@ -75,11 +76,11 @@ fn get_text_from_nth_child(row: &scraper::ElementRef, nth_child: usize) -> Strin
 
 pub fn parse_driver_from_row(row: &scraper::ElementRef) -> Driver {
     let position = get_text_from_nth_child(row, 2);
-    let number = get_text_from_nth_child(row, 3).parse::<u8>().unwrap();
+    let number = get_text_from_nth_child(row, 3);
     let team = get_text_from_nth_child(row, 5);
-    let laps = get_text_from_nth_child(row, 6).parse::<u8>().unwrap();
-    let time = get_text_from_nth_child(row, 7);
-    let points = get_text_from_nth_child(row, 8).parse::<u8>().unwrap();
+    let laps = get_text_from_nth_child(row, 6);
+    let time = escape(&get_text_from_nth_child(row, 7));
+    let points = get_text_from_nth_child(row, 8);
 
     let driver = get_text_from_nth_child(row, 4);
     let mut driver_full_name = Vec::new();
@@ -89,19 +90,6 @@ pub fn parse_driver_from_row(row: &scraper::ElementRef) -> Driver {
             driver_full_name.push(full_name);
         }
     }
-
-    let time = {
-    let mut modified_time = time.clone();
-
-    if modified_time.contains('.') {
-        modified_time = modified_time.replace('.', "\\.");
-    }
-    if modified_time.contains('+') {
-        modified_time = modified_time.replace('+', "\\+");
-    }
-
-    modified_time
-};
 
     let driver_instance = Driver::new(
         position.trim().to_string(),

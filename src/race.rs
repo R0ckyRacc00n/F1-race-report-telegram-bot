@@ -3,6 +3,7 @@ use chrono::NaiveDate;
 use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
 use serde_json::{from_reader, to_writer_pretty};
+use teloxide::utils::markdown::escape;
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -24,7 +25,7 @@ impl Race {
 
 }
 
-pub async fn get_race_data(url: String, season_year: u16) -> Race {
+pub async fn get_race_data(url: String, season_year: i32) -> Race {
     let resp = reqwest::get(&url).await.unwrap();
     let body = resp.text().await.unwrap();
     let html = Html::parse_document(&body);
@@ -36,10 +37,11 @@ pub async fn get_race_data(url: String, season_year: u16) -> Race {
         .text()
         .collect::<String>();
 
-    let mut race_name = html
-        .select(&Selector::parse("h1.ResultsArchiveTitle").unwrap())
-        .next()
-        .map_or(
+    let race_name = escape(&
+        html
+            .select(&Selector::parse("h1.ResultsArchiveTitle").unwrap())
+            .next()
+            .map_or(
             "Undefined race".to_string(),
             |element| element
                 .text()
@@ -49,15 +51,8 @@ pub async fn get_race_data(url: String, season_year: u16) -> Race {
                 .unwrap()
                 .trim()
                 .to_string()
-        );
-
-
-    if race_name.contains('-') {
-        race_name = race_name.replace('-', "\\-");
-    }
-    if race_name.contains('.') {
-        race_name = race_name.replace('.', "\\.");
-    }
+        )
+    );
 
     Race::new(&race_name, &date, &url)
 }
