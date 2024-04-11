@@ -1,6 +1,7 @@
-mod parse;
+mod driver;
 mod prepare_files;
 mod request_to_website;
+mod race;
 
 use std::{
     fs::{self, File, OpenOptions},
@@ -9,19 +10,19 @@ use std::{
     time::Duration,
 };
 
-use chrono::{NaiveDate, Local, TimeZone};
+use chrono::Local;
 use log::LevelFilter;
-use scraper::{Html, Selector};
 use teloxide::{
     Bot,
     payloads::SendMessageSetters,
     prelude::{Message, Requester},
     types::ParseMode,
 };
-
-use crate::parse::prepare_bot_message;
-use crate::prepare_files::{f1_official_results_links, f1_race_event_datetime, delete_completed_races, write_data_to_file};
-use crate::request_to_website::check_for_race_results;
+use teloxide::prelude::*;
+use crate::driver::Driver;
+use crate::prepare_files::f1_official_results_links;
+use crate::race::{read_races_from_json, write_races_to_json};
+use crate::request_to_website::get_results;
 
 fn setup_logger() {
     pretty_env_logger::formatted_builder()
@@ -33,39 +34,26 @@ fn setup_logger() {
 async fn main() {
     setup_logger();
 
-    log::info!("Starting to write urls to vector");
-    let list_of_url = f1_official_results_links().await.unwrap();
-    log::info!("Finished to write urls to vector");
+    // ran code this after every season, once a year
 
-    log::info!("Starting to write dates to vector");
-    let list_of_dates = f1_race_event_datetime(list_of_url.clone()).await.unwrap();
-    log::info!("Finished to write dates to vector");
+/*      log::info!("Starting to write urls to vector");
+        let list_of_url = f1_official_results_links().await.unwrap();
+        log::info!("Finished to write urls to vector");
 
-    log::info!("Starting to write races to file");
-    write_data_to_file(list_of_url.clone(), "races");
+        let mut races = Vec::new();
+        for url in list_of_url {
+            log::info!("Starting to fetch race info");
+            let a = race::get_race_data(url, 2024).await;
+            races.push(a);
+            log::info!("Finished to fetch race info");
+        }
 
-    log::info!("Starting to write dates to file");
-    write_data_to_file(list_of_dates.clone(), "race_dates");
+        write_races_to_json(races).await;   */
 
-    log::info!("Starting check for freshest race");
-    delete_completed_races(list_of_dates).await;
 
     dotenv::dotenv().ok();
     tg_bot().await;
 }
-
-fn read_file_lines_to_vector(filename: &str) -> io::Result<Vec<String>> {
-    let file = File::open(filename)?;
-    let reader = BufReader::new(file);
-    let mut lines = Vec::new();
-
-    for line in reader.lines() {
-        lines.push(line?);
-    }
-
-    Ok(lines)
-}
-
 
 async fn tg_bot() {
     log::info!("Starting f1 bot...");
@@ -74,18 +62,41 @@ async fn tg_bot() {
 
 
     teloxide::repl(bot, |bot: Bot, msg: Message| async move {
-        let mut current_race = read_file_lines_to_vector("races.txt").unwrap();
+        let season_races = read_races_from_json("race_data.json").unwrap();
 
-        loop {
-            let url = &current_race[0].clone();
-
-            if check_for_race_results(url).await {
-                let parsed_results = prepare_bot_message(url).await;
-                bot.send_message(msg.chat.id, parsed_results).parse_mode(ParseMode::MarkdownV2).await.unwrap();
-                current_race.remove(0);
+        for race in season_races {
+            if race.date < Local::now().naive_local().date() {
+                continue;
             }
-            else { log::info!("Race don't have results yet"); }
-            tokio::time::sleep(Duration::from_secs(2)).await;
+            {
+                loop {
+                    let drivers_list = get_results(&race.url).await;
+                    if drivers_list.is_empty() {
+                        log::info!("Race don't have results yet");
+                    }
+                    else {
+                        send_update_message(&bot, msg.chat.id, drivers_list, &race.name).await.unwrap();
+                        break
+                    }
+                    tokio::time::sleep(Duration::from_secs(1200)).await;
+                }
+            }
         }
+
+        Ok(())
     }).await;
+}
+
+async fn send_update_message(bot: &Bot, chat_id: ChatId, drivers: Vec<Driver>, race_name: &str) -> ResponseResult<()> {
+    let mut formatted_drivers = String::new();
+
+    formatted_drivers.push_str(&format!("{race_name}\n\n"));
+    formatted_drivers.push_str("||");
+    for driver in drivers {
+        formatted_drivers.push_str(&driver.to_string());
+    }
+    formatted_drivers.push_str("||");
+
+    bot.send_message(chat_id, formatted_drivers).parse_mode(ParseMode::MarkdownV2).await?;
+    Ok(())
 }
