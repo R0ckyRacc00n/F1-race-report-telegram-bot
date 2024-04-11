@@ -51,8 +51,7 @@ async fn update_file_info() {
         let mut races = Vec::new();
         for url in list_of_url {
             log::info!("Starting to fetch race info");
-            let today_year = Local::now().year();
-            let a = race::get_race_data(url, today_year).await;
+            let a = race::get_race_data(url).await;
             races.push(a);
             log::info!("Finished to fetch race info");
         }

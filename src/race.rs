@@ -25,7 +25,7 @@ impl Race {
 
 }
 
-pub async fn get_race_data(url: String, season_year: i32) -> Race {
+pub async fn get_race_data(url: String) -> Race {
     let resp = reqwest::get(&url).await.unwrap();
     let body = resp.text().await.unwrap();
     let html = Html::parse_document(&body);
@@ -46,7 +46,7 @@ pub async fn get_race_data(url: String, season_year: i32) -> Race {
             |element| element
                 .text()
                 .collect::<String>()
-                .split(&season_year.to_string())
+                .split(" - RACE RESULT")
                 .next()
                 .unwrap()
                 .trim()
@@ -66,4 +66,22 @@ pub fn read_races_from_json(file_path: &str) -> Result<Vec<Race>, Box<dyn std::e
     let file = File::open(file_path)?;
     let drivers: Vec<Race> = from_reader(file)?;
     Ok(drivers)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use chrono::NaiveDate;
+    use crate::race::get_race_data;
+
+    #[tokio::test]
+    async fn test_get_race_data() {
+        let race_url = "https://www.formula1.com/en/results.html/2018/races/979/australia/race-result.html".to_string();
+        let race = get_race_data(race_url).await;
+
+        let hardcode_race_date = NaiveDate::from_ymd_opt(2018, 3, 25).unwrap();
+        assert_eq!(race.date, hardcode_race_date);
+
+        assert_eq!(race.name, "FORMULA 1 2018 ROLEX AUSTRALIAN GRAND PRIX".to_string());
+    }
 }

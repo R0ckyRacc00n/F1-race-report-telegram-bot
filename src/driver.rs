@@ -3,15 +3,15 @@ use scraper::{ElementRef, Selector};
 use teloxide::utils::markdown::escape;
 
 pub struct Driver {
-    position: String,
-    number: String,
-    first_name: String,
-    second_name: String,
-    short_name: String,
-    team: String,
-    laps: String,
-    time: String,
-    points: String,
+    pub position: String,
+    pub number: String,
+    pub first_name: String,
+    pub second_name: String,
+    pub short_name: String,
+    pub team: String,
+    pub laps: String,
+    pub time: String,
+    pub points: String,
 }
 
 impl Driver {

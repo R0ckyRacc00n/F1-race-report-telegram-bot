@@ -26,3 +26,22 @@ pub async fn f1_official_results_links() -> Result<Vec<String>, Error> {
 
     Ok(vec_of_urls)
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_f1_official_results_links() {
+        let result = f1_official_results_links().await;
+        assert!(result.is_ok());
+
+        let links = result.unwrap();
+        assert!(!links.is_empty());
+
+        for link in &links {
+            assert!(link.starts_with("https://www.formula1.com"));
+        }
+    }
+}

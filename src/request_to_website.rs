@@ -32,3 +32,23 @@ pub async fn get_results(url: &str) -> Result<Vec<Driver>, Error> {
         Ok(Vec::new())
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use crate::request_to_website::get_results;
+
+    #[tokio::test]
+    async fn test_get_results() {
+        let race_url = "https://www.formula1.com/en/results.html/2018/races/979/australia/race-result.html";
+        let drivers = get_results(race_url).await.unwrap_or(Vec::new());
+
+        let winner_driver = drivers.get(0).unwrap();
+
+        assert_eq!(winner_driver.first_name, "Sebastian");
+        assert_eq!(winner_driver.second_name, "Vettel");
+
+        let second_driver = drivers.get(1).unwrap();
+        assert_eq!(second_driver.position, "2");
+    }
+}
