@@ -2,7 +2,7 @@ use scraper::{Html, Selector};
 use crate::driver::Driver;
 
 
-pub async fn get_html(url: &str) -> Html {
+async fn get_html(url: &str) -> Html {
     let resp = reqwest::get(url).await.unwrap();
     let body = resp.text().await.expect("err");
 

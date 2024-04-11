@@ -1,6 +1,5 @@
 use std::fmt::{Display, Formatter};
-use scraper::{Html, Selector};
-use crate::request_to_website::get_html;
+use scraper::Selector;
 
 pub struct Driver {
     position: String,
@@ -117,23 +116,4 @@ pub fn parse_driver_from_row(row: &scraper::ElementRef) -> Driver {
     );
 
     driver_instance
-}
-
-pub async fn get_results(url: &str) -> Vec<Driver> {
-    let document = get_html(url).await;
-
-    let selector = Selector::parse(".resultsarchive-table").unwrap();
-    let html_content = document.select(&selector).next().unwrap().html();
-    let table_to_parse = Html::parse_document(&html_content);
-
-    let row_selector = Selector::parse("tbody tr").unwrap();
-
-    let mut drivers_list = Vec::new();
-
-    for row in table_to_parse.select(&row_selector) {
-        let driver = parse_driver_from_row(&row);
-        drivers_list.push(driver);
-    }
-
-    drivers_list
 }
