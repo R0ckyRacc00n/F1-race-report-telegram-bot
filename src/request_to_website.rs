@@ -15,8 +15,6 @@ pub async fn get_results(url: &str) -> Vec<Driver> {
     let table_selector = Selector::parse("table").unwrap();
     let has_table = document.select(&table_selector).next().is_some();
 
-    println!("{}", &has_table);
-
     return if has_table {
         let mut drivers_list = Vec::new();
 
