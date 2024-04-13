@@ -43,18 +43,27 @@ async fn update_file_info() {
         + Duration::from_secs(60*60*24*365) < SystemTime::now() {
 
         log::info!("Starting to write urls to vector");
-        let list_of_url = f1_official_results_links().await.unwrap();
-        log::info!("Finished to write urls to vector");
+        match f1_official_results_links().await {
+            Ok(list_of_url) => {
+                log::info!("Finished to write urls to vector");
 
-        let mut races = Vec::new();
-        for url in list_of_url {
-            log::info!("Starting to fetch race info");
-            let a = race::get_race_data(url).await;
-            races.push(a);
-            log::info!("Finished to fetch race info");
+                let mut races = Vec::new();
+                for url in list_of_url {
+                    log::info!("Starting to fetch race info");
+                    match race::get_race_data(url).await {
+                        Ok(race) => {
+                            races.push(race);
+                            log::info!("Finished to fetch race info");
+                        }
+                        Err(e) => log::error!("Failed to fetch race info: {}", e),
+                    }
+                }
+                if let Err(e) = write_races_to_json(races).await {
+                    log::error!("Failed to write races to json: {}", e);
+                }
+            }
+            Err(e) => log::error!("Failed to write urls to vector: {}", e),
         }
-
-        write_races_to_json(races).await;
     }
     log::info!("Json has the freshest results in it");
 }

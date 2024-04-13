@@ -44,15 +44,18 @@ pub async fn tg_bot() {
                         log::info!("Race don't have results yet");
                     }
                     else {
-                        send_update_message(&bot, msg.chat.id, drivers_list, &race.name).await.unwrap();
+                        if let Err(e) = send_update_message(&bot, msg.chat.id, drivers_list, &race.name).await {
+                            log::error!("Failed to send update message: {}", e);
+                        }
                         break
                     }
                     tokio::time::sleep(Duration::from_secs(1200)).await;
                 }
             }
         }
-        bot.send_message(msg.chat.id, "Season ended 😭\nTo receive the results of next season races, please send me /results before the next f1 year. 🏁").await.unwrap();
-
+        if let Err(e) = bot.send_message(msg.chat.id, "Season ended 😭\nTo receive the results of next season races, please send me /results before the next f1 year. 🏁").await {
+            log::error!("Failed to send season end message: {}", e);
+        }
         Ok(())
     }).await;
 }
